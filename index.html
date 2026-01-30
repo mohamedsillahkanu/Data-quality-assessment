@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICF-SL DQA Roadmap & Automation Tool</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { margin: 0; padding: 20px; background-color: #ffffff; font-family: 'Oswald', Arial, sans-serif; color: #000000; font-weight: 500; }
+        .page-container { width: 100%; max-width: 1600px; margin: 0 auto; }
+        
+        /* Header */
+        .page-header { 
+            background-color: #004080; 
+            color: #ffffff; 
+            padding: 25px 30px; 
+            text-align: center; 
+            margin-bottom: 0; 
+            border-radius: 8px 8px 0 0; 
+        }
+        .logo-row { display: flex; justify-content: center; align-items: center; gap: 30px; margin-bottom: 15px; }
+        .logo-box { background: #ffffff; border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: center; }
+        .logo-box img { width: 100px; height: auto; border-radius: 6px; }
+        .page-header h3 { margin: 12px 0 5px; font-size: 14px; font-weight: 700; letter-spacing: 1px; color: #ffffff; }
+        .page-header .tagline { margin: 0; font-size: 10px; font-weight: 500; color: #ffffff; font-style: italic; }
+        .page-header h1 { margin: 20px 0 10px; font-size: 24px; font-weight: 700; color: #ffffff; letter-spacing: 1px; }
+        .page-header .subtitle { font-size: 14px; color: #ffffff; font-weight: 500; }
+        
+        /* Roadmap Bar */
+        .roadmap-bar { 
+            background: #fff; 
+            border: 4px double #004080; 
+            border-top: none; 
+            padding: 15px 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            flex-wrap: wrap; 
+            gap: 10px; 
+        }
+        .roadmap-step { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #999; }
+        .roadmap-step.active { color: #004080; font-weight: 700; }
+        .roadmap-step.completed { color: #28a745; }
+        .step-num { 
+            width: 32px; height: 32px; border-radius: 50%; 
+            background: #e0e0e0; display: flex; align-items: center; 
+            justify-content: center; font-weight: 700; font-size: 13px; 
+        }
+        .roadmap-step.active .step-num { background: #004080; color: #fff; }
+        .roadmap-step.completed .step-num { background: #28a745; color: #fff; }
+        .step-connector { width: 40px; height: 3px; background: #e0e0e0; }
+        .step-connector.completed { background: #28a745; }
+        
+        /* Content Card */
+        .content-card { 
+            border: 4px double #004080; 
+            border-radius: 12px; 
+            padding: 12px; 
+            background-color: #ffffff; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+            margin-bottom: 15px; 
+        }
+        .content-inner { padding: 20px; }
+        
+        /* Section Header */
+        .section-header { 
+            background-color: #004080; 
+            color: #ffffff; 
+            padding: 15px 20px; 
+            margin-bottom: 20px; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            gap: 15px; 
+        }
+        .section-icon { 
+            background: #ffffff; 
+            color: #004080; 
+            width: 40px; height: 40px; 
+            border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 18px; font-weight: 700; 
+        }
+        .section-title { font-size: 18px; font-weight: 700; }
+        
+        /* Upload Box */
+        .upload-box { 
+            background: #f8f9fa; 
+            padding: 3rem; 
+            border-radius: 8px; 
+            border: 3px dashed #004080; 
+            text-align: center; 
+            cursor: pointer; 
+            transition: all 0.3s; 
+        }
+        .upload-box:hover { background: #e7f3ff; }
+        .upload-box.loaded { border-style: solid; border-color: #28a745; background: #d4edda; }
+        .upload-box h4 { color: #004080; margin-bottom: 0.5rem; font-size: 18px; }
+        .upload-box p { font-size: 13px; color: #666; }
+        .upload-box input { display: none; }
+        .upload-status { font-size: 14px; font-weight: 700; margin-top: 15px; }
+        .upload-status.success { color: #28a745; }
+        
+        /* Buttons */
+        .btn { 
+            padding: 12px 20px; 
+            border: 2px solid #004080; 
+            border-radius: 6px; 
+            font-size: 13px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            font-family: 'Oswald', Arial, sans-serif; 
+            transition: all 0.2s; 
+            margin: 4px; 
+        }
+        .btn-primary { background: #004080; color: #fff; }
+        .btn-primary:hover { background: #0056b3; }
+        .btn-secondary { background: #fff; color: #004080; }
+        .btn-secondary:hover { background: #004080; color: #fff; }
+        .btn-success { background: #28a745; color: #fff; border-color: #28a745; }
+        .btn-success:hover { background: #218838; }
+        .btn-warning { background: #ffc107; color: #000; border-color: #ffc107; }
+        .btn-warning:hover { background: #e0a800; }
+        .btn-danger { background: #dc3545; color: #fff; border-color: #dc3545; }
+        .btn-info { background: #17a2b8; color: #fff; border-color: #17a2b8; }
+        .btn-purple { background: #6f42c1; color: #fff; border-color: #6f42c1; }
+        .btn-lg { padding: 16px 32px; font-size: 15px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* Forms */
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 700; color: #004080; font-size: 13px; text-transform: uppercase; }
+        .form-control { 
+            width: 100%; 
+            padding: 12px 14px; 
+            border: 2px solid #004080; 
+            border-radius: 6px; 
+            font-size: 14px; 
+            font-family: 'Oswald', Arial, sans-serif; 
+        }
+        .form-control:focus { outline: none; border-color: #0056b3; box-shadow: 0 0 0 3px rgba(0,64,128,0.2); }
+        .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px; }
+        .form-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
+        .form-row-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 15px; }
+        .form-row-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 15px; }
+        .help-text { font-size: 11px; color: #666; margin-top: 3px; font-style: italic; }
+        
+        /* Alerts */
+        .alert { padding: 1rem; border-radius: 6px; margin: 1rem 0; font-weight: 500; font-size: 13px; }
+        .alert-success { background: #d4edda; border: 2px solid #28a745; color: #155724; }
+        .alert-error { background: #f8d7da; border: 2px solid #dc3545; color: #721c24; }
+        .alert-info { background: #e7f3ff; border: 2px solid #004080; color: #004080; }
+        .alert-warning { background: #fff3cd; border: 2px solid #ffc107; color: #856404; }
+        
+        /* Config Card */
+        .config-card { background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border: 2px solid #004080; margin: 1rem 0; }
+        .config-card h4 { color: #004080; margin-bottom: 1rem; font-size: 14px; }
+        .config-card.highlight { background: #e7f3ff; }
+        .config-card.warning-card { background: #fff3cd; border-color: #ffc107; }
+        .config-card.info-card { background: #d1ecf1; border-color: #17a2b8; }
+        
+        /* Assessment Items */
+        .assessment-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
+        .assessment-item { background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 8px; padding: 15px; }
+        .assessment-item.configured { border-color: #28a745; background: #f8fff8; }
+        .assessment-item h4 { color: #004080; font-size: 13px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .assessment-item h4 .check { color: #28a745; display: none; }
+        .assessment-item.configured h4 .check { display: inline; }
+        .assessment-item .desc { font-size: 11px; color: #666; margin-bottom: 12px; }
+        
+        /* Checkbox Grid for Outliers */
+        .checkbox-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+            gap: 10px; 
+            max-height: 200px; 
+            overflow-y: auto; 
+            padding: 10px; 
+            background: #fff; 
+            border: 2px solid #004080; 
+            border-radius: 6px; 
+        }
+        .checkbox-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            padding: 8px 12px; 
+            background: #f8f9fa; 
+            border: 2px solid #dee2e6; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            font-size: 12px;
+        }
+        .checkbox-item:hover { border-color: #004080; background: #e7f3ff; }
+        .checkbox-item.selected { border-color: #28a745; background: #d4edda; }
+        .checkbox-item input[type="checkbox"] { 
+            width: 18px; height: 18px; 
+            accent-color: #28a745; 
+            cursor: pointer; 
+        }
+        .checkbox-item label { cursor: pointer; flex: 1; }
+        
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+        .stats-card { background: #fff; padding: 1.5rem; border-radius: 8px; text-align: center; border: 3px solid #004080; }
+        .stats-card .metric-value { font-size: 2rem; color: #004080; font-weight: 700; }
+        .stats-card p { color: #666; font-size: 12px; text-transform: uppercase; margin-top: 5px; }
+        .stats-card.success { border-color: #28a745; }
+        .stats-card.success .metric-value { color: #28a745; }
+        .stats-card.warning { border-color: #ffc107; }
+        .stats-card.warning .metric-value { color: #856404; }
+        .stats-card.danger { border-color: #dc3545; }
+        .stats-card.danger .metric-value { color: #dc3545; }
+        .stats-card.info { border-color: #17a2b8; }
+        .stats-card.info .metric-value { color: #17a2b8; }
+        
+        /* Summary Cards */
+        .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .summary-card { background: #f8f9fa; border: 3px solid #004080; border-radius: 8px; padding: 20px; text-align: center; }
+        .summary-card.passed { border-color: #28a745; }
+        .summary-card.failed { border-color: #dc3545; }
+        .summary-card.warning { border-color: #ffc107; }
+        .summary-card.info { border-color: #17a2b8; }
+        .summary-card .value { font-size: 32px; font-weight: 700; color: #004080; }
+        .summary-card.passed .value { color: #28a745; }
+        .summary-card.failed .value { color: #dc3545; }
+        .summary-card.warning .value { color: #856404; }
+        .summary-card.info .value { color: #17a2b8; }
+        .summary-card .label { font-size: 11px; color: #666; text-transform: uppercase; margin-top: 5px; font-weight: 600; }
+        
+        /* Tables */
+        .table-container { max-height: 500px; overflow: auto; border: 2px solid #004080; border-radius: 8px; margin: 1rem 0; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .data-table th, .data-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        .data-table th { background: #004080; color: #fff; font-weight: 700; position: sticky; top: 0; z-index: 10; }
+        .data-table th.center, .data-table td.center { text-align: center; }
+        .data-table tr:hover { background: #e7f3ff; }
+        .data-table tr:nth-child(even) { background: #f8f9fa; }
+        .data-table .passed { color: #28a745; font-weight: 700; }
+        .data-table .failed { color: #dc3545; font-weight: 700; }
+        .data-table .total-row { background: #e7f3ff !important; font-weight: 700; }
+        
+        /* Tabs */
+        .tab-bar { display: flex; gap: 5px; margin-bottom: 0; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 2px solid #004080; flex-wrap: wrap; }
+        .tab-btn { 
+            padding: 12px 24px; 
+            background: #fff; 
+            border: 2px solid #ddd; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 700; 
+            font-size: 12px; 
+            transition: all 0.2s; 
+            font-family: 'Oswald', Arial, sans-serif; 
+        }
+        .tab-btn:hover { border-color: #004080; }
+        .tab-btn.active { background: #004080; border-color: #004080; color: #fff; }
+        .tab-content { display: none; background: #fff; border: 2px solid #004080; border-radius: 0 8px 8px 8px; padding: 20px; margin-top: -2px; }
+        .tab-content.active { display: block; }
+        
+        /* Badges */
+        .score-badge { display: inline-block; padding: 4px 12px; border-radius: 15px; font-size: 11px; font-weight: 700; }
+        .score-badge.excellent { background: #d4edda; color: #155724; }
+        .score-badge.good { background: #d1ecf1; color: #0c5460; }
+        .score-badge.moderate { background: #fff3cd; color: #856404; }
+        .score-badge.poor { background: #f8d7da; color: #721c24; }
+        
+        .priority-badge { display: inline-block; padding: 5px 14px; border-radius: 15px; font-size: 11px; font-weight: 700; }
+        .priority-badge.high { background: #dc3545; color: #fff; }
+        .priority-badge.medium { background: #ffc107; color: #000; }
+        .priority-badge.low { background: #28a745; color: #fff; }
+        
+        .level-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 700; margin-right: 8px; }
+        .level-badge.l1 { background: #004080; color: #fff; }
+        .level-badge.l2 { background: #17a2b8; color: #fff; }
+        .level-badge.l3 { background: #6f42c1; color: #fff; }
+        .level-badge.l4 { background: #fd7e14; color: #fff; }
+        .level-badge.l5 { background: #20c997; color: #fff; }
+        
+        /* Methodology Box */
+        .methodology-box { 
+            background: #e7f3ff; 
+            border: 3px solid #004080; 
+            border-radius: 8px; 
+            padding: 25px; 
+            margin-bottom: 25px; 
+        }
+        .methodology-box h3 { color: #004080; font-size: 18px; margin-bottom: 15px; border-bottom: 3px solid #004080; padding-bottom: 10px; }
+        .methodology-box h4 { color: #004080; font-size: 14px; margin: 20px 0 10px; }
+        .methodology-box p, .methodology-box li { font-size: 13px; color: #333; line-height: 1.7; }
+        .methodology-box ul { margin-left: 25px; margin-top: 10px; }
+        .methodology-box .formula { 
+            background: #fff; 
+            border: 2px solid #004080; 
+            border-radius: 6px; 
+            padding: 12px 18px; 
+            font-family: 'Courier New', monospace; 
+            font-size: 14px; 
+            margin: 12px 0; 
+            font-weight: 600;
+        }
+        
+        /* Plot Container */
+        .plot-container { border: 2px solid #004080; border-radius: 8px; min-height: 400px; background: #fff; }
+        
+        /* Loading */
+        .loading-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(255,255,255,0.95); 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            z-index: 9999; 
+        }
+        .loading-overlay.hidden { display: none; }
+        .loading-spinner { 
+            width: 70px; height: 70px; 
+            border: 5px solid #e7f3ff; 
+            border-top: 5px solid #004080; 
+            border-radius: 50%; 
+            animation: spin 1s linear infinite; 
+            margin-bottom: 1.5rem; 
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { font-size: 1.5rem; font-weight: 700; color: #004080; }
+        .loading-progress { width: 250px; height: 8px; background: #e7f3ff; border-radius: 4px; margin-top: 15px; overflow: hidden; }
+        .loading-progress-bar { height: 100%; background: #ffc107; border-radius: 4px; transition: width 0.3s; }
+        
+        .hidden { display: none !important; }
+        
+        /* Footer */
+        .page-footer { 
+            background-color: #004080; 
+            color: #ffffff; 
+            padding: 20px 30px; 
+            text-align: center; 
+            font-size: 13px; 
+            line-height: 1.7; 
+            font-weight: 500; 
+            border-radius: 0 0 8px 8px; 
+        }
+        .page-footer p { margin: 6px 0 0; font-size: 12px; color: #ffffff; }
+        
+        .button-group { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 25px; }
+        
+        @media (max-width: 900px) { 
+            .form-row, .form-row-3, .form-row-4, .form-row-5, .assessment-grid { grid-template-columns: 1fr; } 
+            .summary-cards { grid-template-columns: repeat(2, 1fr); }
+            .roadmap-bar { justify-content: center; }
+            .checkbox-grid { grid-template-columns: 1fr; }
+        }
+        
+        @media print {
+            .loading-overlay, .btn, .tab-bar { display: none !important; }
+            .tab-content { display: block !important; border: 1px solid #ccc; margin-bottom: 20px; }
+            .content-card { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">Processing...</div>
+        <div class="loading-progress"><div class="loading-progress-bar" id="loadingProgress"></div></div>
+    </div>
+
+    <div class="page-container">
+        <!-- Header -->
+        <div class="page-header">
+            <div class="logo-row">
+                <div class="logo-box">
+                    <img src="https://github.com/mohamedsillahkanu/gdp-dashboard-2/raw/6c7463b0d5c3be150aafae695a4bcbbd8aeb1499/ICF-SL.jpg" alt="ICF-SL Logo">
+                </div>
+            </div>
+            <h3>Informatics Consultancy Firm-Sierra Leone<br>(ICF-SL)</h3>
+            <p class="tagline">Driving Data-Driven Solutions for Health and Development</p>
+            <h1>DATA QUALITY ASSESSMENT ROADMAP</h1>
+            <p class="subtitle">Automated DQA Tool | Scoring, Ranking & Priority Visit List</p>
+        </div>
+
+        <!-- Roadmap Progress Bar -->
+        <div class="roadmap-bar">
+            <div class="roadmap-step active" id="step1"><div class="step-num">1</div><span>Upload Data</span></div>
+            <div class="step-connector" id="conn1"></div>
+            <div class="roadmap-step" id="step2"><div class="step-num">2</div><span>Configure</span></div>
+            <div class="step-connector" id="conn2"></div>
+            <div class="roadmap-step" id="step3"><div class="step-num">3</div><span>Run Assessment</span></div>
+            <div class="step-connector" id="conn3"></div>
+            <div class="roadmap-step" id="step4"><div class="step-num">4</div><span>View Results</span></div>
+            <div class="step-connector" id="conn4"></div>
+            <div class="roadmap-step" id="step5"><div class="step-num">5</div><span>Export Report</span></div>
+        </div>
+
+        <!-- Step 1: Upload -->
+        <div class="content-card" id="uploadSection">
+            <div class="content-inner">
+                <div class="section-header">
+                    <span class="section-icon">1</span>
+                    <span class="section-title">UPLOAD DATA FILE</span>
+                </div>
+                <div class="upload-box" id="uploadBox" onclick="document.getElementById('fileInput').click()">
+                    <h4>📊 Click to Upload Excel or CSV File</h4>
+                    <p>Supported formats: .xlsx, .xls, .csv | Malaria surveillance data with facility-level records</p>
+                    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls">
+                    <div class="upload-status" id="uploadStatus"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Configure -->
+        <div class="content-card hidden" id="configSection">
+            <div class="content-inner">
+                <div class="section-header">
+                    <span class="section-icon">2</span>
+                    <span class="section-title">CONFIGURE ASSESSMENT PARAMETERS</span>
+                </div>
+                
+                <!-- Basic Config -->
+                <div class="config-card highlight">
+                    <h4>📋 BASIC CONFIGURATION (Required)</h4>
+                    <div class="form-row-5">
+                        <div class="form-group">
+                            <label>Facility Name *</label>
+                            <select id="facilityCol" class="form-control"><option value="">-- Select --</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Facility Type *</label>
+                            <select id="facilityTypeCol" class="form-control"><option value="">-- Select --</option></select>
+                            <p class="help-text">CHC, CHP, MCHP, Hospital</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Year Column *</label>
+                            <select id="yearCol" class="form-control"><option value="">-- Select --</option></select>
+                            <p class="help-text">For outlier analysis by year</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Period/Month</label>
+                            <select id="periodCol" class="form-control"><option value="">-- None --</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label>District</label>
+                            <select id="districtCol" class="form-control"><option value="">-- None --</option></select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coherency Checks -->
+                <div class="config-card">
+                    <h4>🔗 COHERENCY CHECKS (Y ≤ X Rule) - Weight: 25%</h4>
+                    <div class="assessment-grid">
+                        <div class="assessment-item" id="item-opd-susp">
+                            <h4><span class="check">✓</span> 1. All-Cause OPD vs Suspected Malaria</h4>
+                            <p class="desc">Suspected malaria ≤ Total OPD visits</p>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>All-Cause OPD (X)</label>
+                                    <select id="allCauseOPD" class="form-control cfg" data-item="opd-susp"><option value="">-- Select --</option></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Suspected (Y)</label>
+                                    <select id="suspected" class="form-control cfg" data-item="opd-susp"><option value="">-- Select --</option></select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="assessment-item" id="item-susp-test">
+                            <h4><span class="check">✓</span> 2. Suspected vs Tested</h4>
+                            <p class="desc">Tested cases ≤ Suspected cases</p>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Suspected (X)</label>
+                                    <select id="suspectedX" class="form-control cfg" data-item="susp-test"><option value="">-- Select --</option></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Tested (Y)</label>
+                                    <select id="tested" class="form-control cfg" data-item="susp-test"><option value="">-- Select --</option></select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="assessment-item" id="item-test-conf">
+                            <h4><span class="check">✓</span> 3. Tested vs Confirmed</h4>
+                            <p class="desc">Confirmed cases ≤ Tested cases</p>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Tested (X)</label>
+                                    <select id="testedX" class="form-control cfg" data-item="test-conf"><option value="">-- Select --</option></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Confirmed (Y)</label>
+                                    <select id="confirmed" class="form-control cfg" data-item="test-conf"><option value="">-- Select --</option></select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="assessment-item" id="item-conf-treat">
+                            <h4><span class="check">✓</span> 4. Confirmed vs Treated (No Presumed)</h4>
+                            <p class="desc">Treated ≤ Confirmed (excluding presumed)</p>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Confirmed (X)</label>
+                                    <select id="confirmedX" class="form-control cfg" data-item="conf-treat"><option value="">-- Select --</option></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Treated (Y)</label>
+                                    <select id="treated" class="form-control cfg" data-item="conf-treat"><option value="">-- Select --</option></select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Special Indicators -->
+                <div class="config-card warning-card">
+                    <h4>⚠️ SPECIAL INDICATOR CHECKS - Weight: 25%</h4>
+                    <div class="assessment-grid">
+                        <div class="assessment-item" id="item-rdt-stockout">
+                            <h4><span class="check">✓</span> 5. Treated Not Tested (RDT Stockout)</h4>
+                            <p class="desc">Treatment without testing - potential RDT stockout</p>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Treated Column</label>
+                                    <select id="treatedStock" class="form-control cfg" data-item="rdt-stockout"><option value="">-- Select --</option></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Tested Column</label>
+                                    <select id="testedStock" class="form-control cfg" data-item="rdt-stockout"><option value="">-- Select --</option></select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="assessment-item" id="item-conf-not-treat">
+                            <h4><span class="check">✓</span> 6. Confirmed Not Treated</h4>
+                            <p class="desc">Confirmed positive but no treatment</p>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Confirmed Column</label>
+                                    <select id="confNotTreat" class="form-control cfg" data-item="conf-not-treat"><option value="">-- Select --</option></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Treated Column</label>
+                                    <select id="treatNotTreat" class="form-control cfg" data-item="conf-not-treat"><option value="">-- Select --</option></select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="assessment-item" id="item-inappropriate">
+                            <h4><span class="check">✓</span> 7. Inappropriate Reporting</h4>
+                            <p class="desc">HFs reporting on variables they should NOT report</p>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Variable</label>
+                                    <select id="inappropriateVar" class="form-control cfg" data-item="inappropriate"><option value="">-- Select --</option></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Excluded Facility Types</label>
+                                    <input type="text" id="excludedTypes" class="form-control" placeholder="e.g., MCHP, CHP">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="assessment-item" id="item-missing">
+                            <h4><span class="check">✓</span> 8. Missing Required Reporting</h4>
+                            <p class="desc">HFs NOT reporting on required variables</p>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Required Variable</label>
+                                    <select id="missingVar" class="form-control cfg" data-item="missing"><option value="">-- Select --</option></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Required Facility Types</label>
+                                    <input type="text" id="requiredTypes" class="form-control" placeholder="e.g., CHC, Hospital">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reporting & Outliers -->
+                <div class="config-card info-card">
+                    <h4>📊 REPORTING RATE (25%) & OUTLIER DETECTION (25%)</h4>
+                    <div class="assessment-grid">
+                        <div class="assessment-item" id="item-reporting">
+                            <h4><span class="check">✓</span> 9. Reporting Rate/Completeness</h4>
+                            <p class="desc">Facility reporting patterns by HF and Year</p>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Expected Reports/Year</label>
+                                    <input type="number" id="expectedReports" class="form-control" value="12" min="1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Key Variable</label>
+                                    <select id="reportingVar" class="form-control cfg" data-item="reporting"><option value="">-- Select --</option></select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="assessment-item" id="item-outliers">
+                            <h4><span class="check">✓</span> 10. Outlier Detection (IQR Method)</h4>
+                            <p class="desc">By HF & Year - Upper/Lower bounds at Q1-1.5×IQR and Q3+1.5×IQR</p>
+                            <div class="form-group">
+                                <label>Select Variables to Check for Outliers</label>
+                                <div class="checkbox-grid" id="outlierCheckboxes">
+                                    <!-- Checkboxes will be populated here -->
+                                </div>
+                                <p class="help-text">Check the boxes for variables you want to analyze for outliers</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-success btn-lg" onclick="runAssessment()">🚀 RUN FULL ASSESSMENT</button>
+                    <button class="btn btn-secondary" onclick="resetConfig()">🔄 Reset Configuration</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3-4: Results -->
+        <div class="content-card hidden" id="resultsSection">
+            <div class="content-inner">
+                <div class="section-header">
+                    <span class="section-icon">3</span>
+                    <span class="section-title">ASSESSMENT RESULTS & PRIORITY RANKING</span>
+                </div>
+                
+                <!-- Methodology Box -->
+                <div class="methodology-box">
+                    <h3>📐 SCORING METHODOLOGY</h3>
+                    <p>Each facility is scored across <strong>4 dimensions</strong>, each contributing <strong>25%</strong> to the total score (max 100 points):</p>
+                    
+                    <h4>1. Reporting Rate Score (25 points)</h4>
+                    <div class="formula">Reporting Score = (Reported Periods / Expected Periods) × 25</div>
+                    <p>Measures completeness of monthly reporting per facility per year.</p>
+                    
+                    <h4>2. Coherency Score (25 points)</h4>
+                    <div class="formula">Coherency Score = (Passed Checks / Total Checks) × 25</div>
+                    <p>Validates logical relationships: OPD ≥ Suspected ≥ Tested ≥ Confirmed ≥ Treated</p>
+                    
+                    <h4>3. Indicator Score (25 points)</h4>
+                    <div class="formula">Indicator Score = ((Total - Issues) / Total) × 25</div>
+                    <p>Checks for RDT stockout signals, untreated confirmed cases, inappropriate/missing reporting.</p>
+                    
+                    <h4>4. Outlier Score (25 points)</h4>
+                    <div class="formula">Outlier Score = ((Total - Outliers) / Total) × 25</div>
+                    <p><strong>IQR Method by HF & Year:</strong> Values below Q1−1.5×IQR (lower bound) or above Q3+1.5×IQR (upper bound) are flagged.</p>
+                    <ul>
+                        <li><strong>Q1 (25th percentile):</strong> Value below which 25% of data falls</li>
+                        <li><strong>Q3 (75th percentile):</strong> Value below which 75% of data falls</li>
+                        <li><strong>IQR:</strong> Q3 − Q1 (Interquartile Range)</li>
+                        <li><strong>Lower Bound:</strong> Q1 − 1.5 × IQR</li>
+                        <li><strong>Upper Bound:</strong> Q3 + 1.5 × IQR</li>
+                    </ul>
+                    
+                    <h4>🎯 Priority Ranking</h4>
+                    <div class="formula">Total Score = Reporting(25) + Coherency(25) + Indicator(25) + Outlier(25) = 100 max</div>
+                    <p><strong>Facilities are ranked from LOWEST to HIGHEST score.</strong> Lower scores indicate more data quality issues and should be prioritized for supportive supervision visits.</p>
+                    <ul>
+                        <li><span class="priority-badge high">HIGH PRIORITY</span> Score &lt; 50 - Immediate attention required</li>
+                        <li><span class="priority-badge medium">MEDIUM PRIORITY</span> Score 50-74 - Follow-up needed</li>
+                        <li><span class="priority-badge low">LOW PRIORITY</span> Score ≥ 75 - Good performance</li>
+                    </ul>
+                </div>
+                
+                <!-- Summary Cards -->
+                <div class="summary-cards" id="summaryCards">
+                    <div class="summary-card">
+                        <div class="value" id="overallScore">--</div>
+                        <div class="label">Avg DQA Score (of 100)</div>
+                    </div>
+                    <div class="summary-card passed">
+                        <div class="value" id="totalRecords">0</div>
+                        <div class="label">Total Records</div>
+                    </div>
+                    <div class="summary-card info">
+                        <div class="value" id="totalFacilities">0</div>
+                        <div class="label">Facilities Assessed</div>
+                    </div>
+                    <div class="summary-card failed">
+                        <div class="value" id="priorityCount">0</div>
+                        <div class="label">High Priority (Score &lt;50)</div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="switchTab('ranking')">🏆 Priority Ranking</button>
+                    <button class="tab-btn" onclick="switchTab('summary')">📊 Summary</button>
+                    <button class="tab-btn" onclick="switchTab('coherency')">🔗 Coherency</button>
+                    <button class="tab-btn" onclick="switchTab('indicators')">⚠️ Indicators</button>
+                    <button class="tab-btn" onclick="switchTab('reporting')">📋 Reporting</button>
+                    <button class="tab-btn" onclick="switchTab('outliers')">📉 Outliers</button>
+                </div>
+
+                <!-- Tab Contents -->
+                <div id="tab-ranking" class="tab-content active">
+                    <div id="rankingResults"></div>
+                </div>
+                
+                <div id="tab-summary" class="tab-content">
+                    <div id="categoryScoresContainer"></div>
+                    <div class="plot-container" id="summaryPlot" style="margin-top: 15px;"></div>
+                </div>
+                
+                <div id="tab-coherency" class="tab-content">
+                    <div id="coherencyResults"></div>
+                    <div class="plot-container" id="coherencyPlot" style="margin-top: 15px;"></div>
+                </div>
+                
+                <div id="tab-indicators" class="tab-content">
+                    <div id="indicatorResults"></div>
+                </div>
+                
+                <div id="tab-reporting" class="tab-content">
+                    <div id="reportingResults"></div>
+                    <div class="plot-container" id="reportingPlot" style="margin-top: 15px;"></div>
+                </div>
+                
+                <div id="tab-outliers" class="tab-content">
+                    <div id="outlierResults"></div>
+                    <div class="plot-container" id="outlierPlot" style="margin-top: 15px;"></div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-success btn-lg" onclick="exportFullReport()">📥 Export Full Report (CSV)</button>
+                    <button class="btn btn-warning btn-lg" onclick="exportPriorityList()">📥 Export Priority Visit List</button>
+                    <button class="btn btn-purple btn-lg" onclick="exportOutlierDetails()">📥 Export Outlier Details</button>
+                    <button class="btn btn-info btn-lg" onclick="window.print()">🖨️ Print Report</button>
+                    <button class="btn btn-secondary btn-lg" onclick="resetAll()">🔄 Start Over</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-footer">
+            <p style="margin: 0; font-weight: 700;">National Malaria Control Programme</p>
+            <p>Ministry of Health and Sanitation, Sierra Leone</p>
+            <p style="font-size: 10px;">© 2025 Informatics Consultancy Firm-Sierra Leone (ICF-SL)</p>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let rawData = [], allColumns = [], numericCols = [];
+        let results = { coherency: {}, indicators: {}, reporting: null, outliers: {}, rankings: [] };
+
+        // Utility functions
+        function showLoading(t, p) {
+            document.getElementById('loadingText').textContent = t || 'Processing...';
+            document.getElementById('loadingProgress').style.width = (p || 0) + '%';
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
+        function hideLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
+        
+        function showAlert(msg, type) {
+            // Simple alert - could enhance with proper alert div
+            console.log(type + ': ' + msg);
+        }
+
+        function updateRoadmap(step) {
+            for (var i = 1; i <= 5; i++) {
+                var s = document.getElementById('step' + i);
+                var c = document.getElementById('conn' + (i - 1));
+                s.classList.remove('active', 'completed');
+                if (c) c.classList.remove('completed');
+                if (i < step) {
+                    s.classList.add('completed');
+                    s.querySelector('.step-num').textContent = '✓';
+                    if (c) c.classList.add('completed');
+                } else if (i === step) {
+                    s.classList.add('active');
+                    s.querySelector('.step-num').textContent = i;
+                } else {
+                    s.querySelector('.step-num').textContent = i;
+                }
+            }
+        }
+
+        // File handling
+        document.getElementById('fileInput').onchange = function(e) { 
+            if (e.target.files.length) handleFile(e.target.files[0]); 
+        };
+
+        function handleFile(file) {
+            var name = file.name.toLowerCase();
+            if (!name.endsWith('.csv') && !name.endsWith('.xlsx') && !name.endsWith('.xls')) {
+                alert('Please upload a CSV or Excel file');
+                return;
+            }
+            showLoading('Reading file...', 20);
+            
+            if (name.endsWith('.csv')) {
+                Papa.parse(file, {
+                    header: true, dynamicTyping: true, skipEmptyLines: true,
+                    complete: function(r) { processData(r.data, r.meta.fields || [], file.name); },
+                    error: function(e) { hideLoading(); alert('Error: ' + e.message); }
+                });
+            } else {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        var wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+                        var data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:''});
+                        var cols = data.length ? Object.keys(data[0]) : [];
+                        processData(data, cols, file.name);
+                    } catch(err) { hideLoading(); alert('Error: ' + err.message); }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function processData(data, cols, fname) {
+            showLoading('Analyzing columns...', 60);
+            rawData = data; allColumns = cols; numericCols = [];
+            
+            for (var i = 0; i < cols.length; i++) {
+                var col = cols[i], numCount = 0, total = 0;
+                for (var j = 0; j < Math.min(data.length, 50); j++) {
+                    var v = data[j][col];
+                    if (v !== null && v !== undefined && v !== '') {
+                        total++;
+                        if (typeof v === 'number' || !isNaN(parseFloat(v))) numCount++;
+                    }
+                }
+                if (total > 0 && numCount/total > 0.5) numericCols.push(col);
+            }
+
+            showLoading('Ready!', 100);
+            setTimeout(function() {
+                document.getElementById('uploadBox').classList.add('loaded');
+                document.getElementById('uploadStatus').className = 'upload-status success';
+                document.getElementById('uploadStatus').textContent = '✓ Loaded ' + data.length.toLocaleString() + ' rows × ' + cols.length + ' columns (' + numericCols.length + ' numeric)';
+                populateSelectors();
+                document.getElementById('configSection').classList.remove('hidden');
+                updateRoadmap(2);
+                hideLoading();
+            }, 200);
+        }
+
+        function populateSelectors() {
+            var allSelects = ['facilityCol', 'facilityTypeCol', 'yearCol', 'periodCol', 'districtCol'];
+            allSelects.forEach(function(id) {
+                var sel = document.getElementById(id);
+                sel.innerHTML = '<option value="">-- Select --</option>';
+                allColumns.forEach(function(col) {
+                    sel.innerHTML += '<option value="'+col+'">'+col+'</option>';
+                });
+            });
+            
+            var numSelects = ['allCauseOPD', 'suspected', 'suspectedX', 'tested', 'testedX', 'confirmed', 
+                             'confirmedX', 'treated', 'treatedStock', 'testedStock', 'confNotTreat', 
+                             'treatNotTreat', 'reportingVar', 'inappropriateVar', 'missingVar'];
+            numSelects.forEach(function(id) {
+                var sel = document.getElementById(id);
+                if (sel) {
+                    sel.innerHTML = '<option value="">-- Select --</option>';
+                    numericCols.forEach(function(col) {
+                        sel.innerHTML += '<option value="'+col+'">'+col+'</option>';
+                    });
+                }
+            });
+            
+            // Populate checkbox grid for outliers
+            var checkboxGrid = document.getElementById('outlierCheckboxes');
+            checkboxGrid.innerHTML = '';
+            numericCols.forEach(function(col, idx) {
+                var div = document.createElement('div');
+                div.className = 'checkbox-item';
+                div.innerHTML = '<input type="checkbox" id="outlier_' + idx + '" value="' + col + '" onchange="updateOutlierSelection(this)">' +
+                               '<label for="outlier_' + idx + '">' + col + '</label>';
+                div.onclick = function(e) {
+                    if (e.target.tagName !== 'INPUT') {
+                        var cb = div.querySelector('input');
+                        cb.checked = !cb.checked;
+                        updateOutlierSelection(cb);
+                    }
+                };
+                checkboxGrid.appendChild(div);
+            });
+
+            document.querySelectorAll('.cfg').forEach(function(sel) {
+                sel.addEventListener('change', function() { checkItemConfig(sel.dataset.item); });
+            });
+        }
+
+        function updateOutlierSelection(checkbox) {
+            var item = checkbox.closest('.checkbox-item');
+            if (checkbox.checked) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
+            // Update the outliers assessment item
+            var selectedCount = document.querySelectorAll('#outlierCheckboxes input:checked').length;
+            var outlierItem = document.getElementById('item-outliers');
+            if (selectedCount > 0) {
+                outlierItem.classList.add('configured');
+            } else {
+                outlierItem.classList.remove('configured');
+            }
+        }
+
+        function getSelectedOutlierVars() {
+            var selected = [];
+            document.querySelectorAll('#outlierCheckboxes input:checked').forEach(function(cb) {
+                selected.push(cb.value);
+            });
+            return selected;
+        }
+
+        function checkItemConfig(itemId) {
+            var item = document.getElementById('item-' + itemId);
+            if (!item) return;
+            var selects = item.querySelectorAll('select');
+            var allSet = true;
+            selects.forEach(function(s) { if (!s.value) allSet = false; });
+            item.classList.toggle('configured', allSet);
+        }
+
+        function resetConfig() {
+            document.querySelectorAll('.form-control').forEach(function(el) {
+                if (el.tagName === 'SELECT') el.selectedIndex = 0;
+                else if (el.type === 'number') el.value = el.defaultValue || '12';
+                else if (el.type === 'checkbox') el.checked = false;
+                else el.value = '';
+            });
+            document.querySelectorAll('.assessment-item').forEach(function(item) { item.classList.remove('configured'); });
+            document.querySelectorAll('.checkbox-item').forEach(function(item) { item.classList.remove('selected'); });
+            document.querySelectorAll('#outlierCheckboxes input').forEach(function(cb) { cb.checked = false; });
+        }
+
+        function resetAll() {
+            resetConfig();
+            rawData = []; allColumns = []; numericCols = [];
+            results = { coherency: {}, indicators: {}, reporting: null, outliers: {}, rankings: [] };
+            document.getElementById('uploadBox').classList.remove('loaded');
+            document.getElementById('uploadStatus').textContent = '';
+            document.getElementById('uploadStatus').className = 'upload-status';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('configSection').classList.add('hidden');
+            document.getElementById('resultsSection').classList.add('hidden');
+            updateRoadmap(1);
+        }
+
+        // Assessment functions
+        function runAssessment() {
+            var facilityCol = document.getElementById('facilityCol').value;
+            var facilityTypeCol = document.getElementById('facilityTypeCol').value;
+            var yearCol = document.getElementById('yearCol').value;
+            
+            if (!facilityCol || !facilityTypeCol || !yearCol) { 
+                alert('Please select Facility, Facility Type, and Year columns');
+                return; 
+            }
+
+            showLoading('Running assessments...', 10);
+            updateRoadmap(3);
+            results = { coherency: {}, indicators: {}, reporting: null, outliers: {}, rankings: [] };
+
+            setTimeout(function() {
+                try {
+                    showLoading('Coherency checks...', 20);
+                    runCoherencyChecks();
+                    
+                    showLoading('Indicator checks...', 40);
+                    runIndicatorChecks();
+                    
+                    showLoading('Reporting analysis...', 55);
+                    runReportingAnalysis();
+                    
+                    showLoading('Outlier detection by HF & Year...', 70);
+                    runOutlierDetection();
+                    
+                    showLoading('Calculating scores & rankings...', 85);
+                    calculateRankings();
+                    
+                    showLoading('Rendering results...', 95);
+                    displayResults();
+                    
+                    document.getElementById('resultsSection').classList.remove('hidden');
+                    updateRoadmap(4);
+                    hideLoading();
+                    document.getElementById('resultsSection').scrollIntoView({behavior: 'smooth'});
+                } catch(err) {
+                    hideLoading();
+                    alert('Error: ' + err.message);
+                    console.error(err);
+                }
+            }, 100);
+        }
+
+        function runCoherencyChecks() {
+            var facilityCol = document.getElementById('facilityCol').value;
+            var facilityTypeCol = document.getElementById('facilityTypeCol').value;
+            var yearCol = document.getElementById('yearCol').value;
+            var periodCol = document.getElementById('periodCol').value;
+            
+            var checks = [
+                { id: 'opd-susp', name: 'OPD vs Suspected', xId: 'allCauseOPD', yId: 'suspected' },
+                { id: 'susp-test', name: 'Suspected vs Tested', xId: 'suspectedX', yId: 'tested' },
+                { id: 'test-conf', name: 'Tested vs Confirmed', xId: 'testedX', yId: 'confirmed' },
+                { id: 'conf-treat', name: 'Confirmed vs Treated', xId: 'confirmedX', yId: 'treated' }
+            ];
+            
+            checks.forEach(function(check) {
+                var xVar = document.getElementById(check.xId).value;
+                var yVar = document.getElementById(check.yId).value;
+                
+                if (xVar && yVar) {
+                    var passed = 0, failed = 0, total = 0;
+                    var failedRecs = [];
+                    
+                    rawData.forEach(function(row) {
+                        var x = parseFloat(row[xVar]);
+                        var y = parseFloat(row[yVar]);
+                        if (!isNaN(x) && !isNaN(y)) {
+                            total++;
+                            if (y <= x) {
+                                passed++;
+                            } else {
+                                failed++;
+                                failedRecs.push({
+                                    facility: row[facilityCol] || 'Unknown',
+                                    facilityType: row[facilityTypeCol] || '-',
+                                    year: row[yearCol] || '-',
+                                    period: row[periodCol] || '-',
+                                    x: x, y: y, diff: y - x
+                                });
+                            }
+                        }
+                    });
+                    
+                    results.coherency[check.id] = {
+                        name: check.name, xVar: xVar, yVar: yVar,
+                        total: total, passed: passed, failed: failed,
+                        passRate: total > 0 ? (passed/total*100).toFixed(1) : 0,
+                        failedRecs: failedRecs
+                    };
+                }
+            });
+        }
+
+        function runIndicatorChecks() {
+            var facilityCol = document.getElementById('facilityCol').value;
+            var facilityTypeCol = document.getElementById('facilityTypeCol').value;
+            var yearCol = document.getElementById('yearCol').value;
+            
+            // RDT Stockout
+            var treatedStock = document.getElementById('treatedStock').value;
+            var testedStock = document.getElementById('testedStock').value;
+            if (treatedStock && testedStock) {
+                var issues = 0, total = 0, recs = [];
+                rawData.forEach(function(row) {
+                    var treated = parseFloat(row[treatedStock]) || 0;
+                    var tested = parseFloat(row[testedStock]) || 0;
+                    if (treated > 0 || tested > 0) {
+                        total++;
+                        if (treated > tested) {
+                            issues++;
+                            recs.push({ facility: row[facilityCol], facilityType: row[facilityTypeCol], year: row[yearCol], treated: treated, tested: tested, diff: treated - tested });
+                        }
+                    }
+                });
+                results.indicators.rdtStockout = { name: 'Treated Not Tested (RDT Stockout)', total: total, issues: issues, rate: total > 0 ? (issues/total*100).toFixed(1) : 0, recs: recs };
+            }
+            
+            // Confirmed Not Treated
+            var confNotTreat = document.getElementById('confNotTreat').value;
+            var treatNotTreat = document.getElementById('treatNotTreat').value;
+            if (confNotTreat && treatNotTreat) {
+                var issues = 0, total = 0, recs = [];
+                rawData.forEach(function(row) {
+                    var conf = parseFloat(row[confNotTreat]) || 0;
+                    var treat = parseFloat(row[treatNotTreat]) || 0;
+                    if (conf > 0) {
+                        total++;
+                        if (conf > treat) {
+                            issues++;
+                            recs.push({ facility: row[facilityCol], facilityType: row[facilityTypeCol], year: row[yearCol], confirmed: conf, treated: treat, untreated: conf - treat });
+                        }
+                    }
+                });
+                results.indicators.confNotTreated = { name: 'Confirmed Not Treated', total: total, issues: issues, rate: total > 0 ? (issues/total*100).toFixed(1) : 0, recs: recs };
+            }
+            
+            // Inappropriate Reporting
+            var inappropriateVar = document.getElementById('inappropriateVar').value;
+            var excludedTypes = document.getElementById('excludedTypes').value.split(',').map(function(s) { return s.trim().toUpperCase(); }).filter(function(s) { return s; });
+            if (inappropriateVar && excludedTypes.length > 0) {
+                var issues = 0, total = 0, recs = [];
+                rawData.forEach(function(row) {
+                    var facType = String(row[facilityTypeCol] || '').toUpperCase();
+                    var val = parseFloat(row[inappropriateVar]);
+                    if (excludedTypes.indexOf(facType) >= 0) {
+                        total++;
+                        if (!isNaN(val) && val > 0) {
+                            issues++;
+                            recs.push({ facility: row[facilityCol], facilityType: row[facilityTypeCol], year: row[yearCol], value: val });
+                        }
+                    }
+                });
+                results.indicators.inappropriate = { name: 'Inappropriate Reporting', desc: excludedTypes.join(', ') + ' reporting on ' + inappropriateVar, total: total, issues: issues, rate: total > 0 ? (issues/total*100).toFixed(1) : 0, recs: recs };
+            }
+            
+            // Missing Required Reporting
+            var missingVar = document.getElementById('missingVar').value;
+            var requiredTypes = document.getElementById('requiredTypes').value.split(',').map(function(s) { return s.trim().toUpperCase(); }).filter(function(s) { return s; });
+            if (missingVar) {
+                var issues = 0, total = 0, recs = [];
+                rawData.forEach(function(row) {
+                    var facType = facilityTypeCol ? String(row[facilityTypeCol] || '').toUpperCase() : '';
+                    if (requiredTypes.length === 0 || requiredTypes.indexOf(facType) >= 0) {
+                        total++;
+                        var val = row[missingVar];
+                        if (val === null || val === undefined || val === '' || (typeof val === 'number' && isNaN(val))) {
+                            issues++;
+                            recs.push({ facility: row[facilityCol], facilityType: row[facilityTypeCol] || '-', year: row[yearCol] });
+                        }
+                    }
+                });
+                results.indicators.missing = { name: 'Missing Required Reporting', desc: 'Missing ' + missingVar, total: total, issues: issues, rate: total > 0 ? (issues/total*100).toFixed(1) : 0, recs: recs };
+            }
+        }
+
+        function runReportingAnalysis() {
+            var facilityCol = document.getElementById('facilityCol').value;
+            var facilityTypeCol = document.getElementById('facilityTypeCol').value;
+            var yearCol = document.getElementById('yearCol').value;
+            var reportingVar = document.getElementById('reportingVar').value;
+            var expected = parseInt(document.getElementById('expectedReports').value) || 12;
+            
+            if (!reportingVar) return;
+            
+            var facilityYearCounts = {};
+            rawData.forEach(function(row) {
+                var fac = row[facilityCol];
+                var facType = row[facilityTypeCol];
+                var year = row[yearCol];
+                var val = row[reportingVar];
+                var key = fac + '|||' + year;
+                
+                if (fac && year) {
+                    if (!facilityYearCounts[key]) {
+                        facilityYearCounts[key] = { facility: fac, facilityType: facType, year: year, total: 0, reported: 0 };
+                    }
+                    facilityYearCounts[key].total++;
+                    if (val !== null && val !== undefined && val !== '') facilityYearCounts[key].reported++;
+                }
+            });
+            
+            var rates = [];
+            Object.values(facilityYearCounts).forEach(function(d) {
+                var rate = d.total > 0 ? Math.min((d.reported / Math.min(d.total, expected)) * 100, 100) : 0;
+                rates.push({ 
+                    facility: d.facility, 
+                    facilityType: d.facilityType, 
+                    year: d.year, 
+                    reported: d.reported, 
+                    expected: Math.min(d.total, expected), 
+                    rate: rate.toFixed(1) 
+                });
+            });
+            rates.sort(function(a, b) { return parseFloat(a.rate) - parseFloat(b.rate); });
+            
+            var avgRate = rates.length > 0 ? (rates.reduce(function(s, r) { return s + parseFloat(r.rate); }, 0) / rates.length).toFixed(1) : 0;
+            
+            var facilityRates = {};
+            rates.forEach(function(r) {
+                if (!facilityRates[r.facility]) {
+                    facilityRates[r.facility] = { facilityType: r.facilityType, rates: [], avgRate: 0 };
+                }
+                facilityRates[r.facility].rates.push(parseFloat(r.rate));
+            });
+            Object.keys(facilityRates).forEach(function(fac) {
+                var arr = facilityRates[fac].rates;
+                facilityRates[fac].avgRate = (arr.reduce(function(a,b){return a+b;}, 0) / arr.length).toFixed(1);
+            });
+            
+            results.reporting = { 
+                totalFacilityYears: rates.length, 
+                avgRate: avgRate, 
+                detailedRates: rates,
+                facilityRates: facilityRates
+            };
+        }
+
+        function runOutlierDetection() {
+            var facilityCol = document.getElementById('facilityCol').value;
+            var facilityTypeCol = document.getElementById('facilityTypeCol').value;
+            var yearCol = document.getElementById('yearCol').value;
+            var periodCol = document.getElementById('periodCol').value;
+            var outlierVars = getSelectedOutlierVars();
+            
+            if (outlierVars.length === 0) return;
+            
+            outlierVars.forEach(function(varName) {
+                var yearValues = {};
+                rawData.forEach(function(row) {
+                    var year = row[yearCol];
+                    var val = parseFloat(row[varName]);
+                    if (year && !isNaN(val)) {
+                        if (!yearValues[year]) yearValues[year] = [];
+                        yearValues[year].push({ row: row, value: val });
+                    }
+                });
+                
+                var allOutliers = [];
+                var yearStats = {};
+                
+                Object.keys(yearValues).forEach(function(year) {
+                    var values = yearValues[year].map(function(d) { return d.value; });
+                    values.sort(function(a, b) { return a - b; });
+                    
+                    if (values.length < 4) return;
+                    
+                    var q1 = values[Math.floor(values.length * 0.25)];
+                    var q3 = values[Math.floor(values.length * 0.75)];
+                    var iqr = q3 - q1;
+                    var lower = q1 - 1.5 * iqr;
+                    var upper = q3 + 1.5 * iqr;
+                    
+                    yearStats[year] = { q1: q1, q3: q3, iqr: iqr, lower: lower, upper: upper, total: values.length };
+                    
+                    yearValues[year].forEach(function(d) {
+                        if (d.value < lower || d.value > upper) {
+                            allOutliers.push({
+                                facility: d.row[facilityCol],
+                                facilityType: d.row[facilityTypeCol],
+                                year: year,
+                                period: d.row[periodCol] || '-',
+                                value: d.value,
+                                type: d.value < lower ? 'Below Lower Bound' : 'Above Upper Bound',
+                                bound: d.value < lower ? lower.toFixed(1) : upper.toFixed(1)
+                            });
+                        }
+                    });
+                });
+                
+                var totalValues = Object.values(yearValues).reduce(function(s, arr) { return s + arr.length; }, 0);
+                
+                results.outliers[varName] = {
+                    variable: varName,
+                    total: totalValues,
+                    count: allOutliers.length,
+                    rate: totalValues > 0 ? ((allOutliers.length / totalValues) * 100).toFixed(1) : 0,
+                    yearStats: yearStats,
+                    outliers: allOutliers
+                };
+            });
+        }
+
+        function calculateRankings() {
+            var facilityCol = document.getElementById('facilityCol').value;
+            var facilityTypeCol = document.getElementById('facilityTypeCol').value;
+            
+            var facilityData = {};
+            rawData.forEach(function(row) {
+                var fac = row[facilityCol];
+                var facType = row[facilityTypeCol];
+                if (fac && !facilityData[fac]) {
+                    facilityData[fac] = { 
+                        facilityType: facType,
+                        coherencyTotal: 0, coherencyPassed: 0,
+                        indicatorTotal: 0, indicatorIssues: 0,
+                        outlierTotal: 0, outlierCount: 0,
+                        reportingRate: 100
+                    };
+                }
+            });
+            
+            // Count coherency by facility
+            Object.values(results.coherency).forEach(function(c) {
+                rawData.forEach(function(row) {
+                    var fac = row[facilityCol];
+                    var xVar = c.xVar, yVar = c.yVar;
+                    var x = parseFloat(row[xVar]);
+                    var y = parseFloat(row[yVar]);
+                    if (fac && facilityData[fac] && !isNaN(x) && !isNaN(y)) {
+                        facilityData[fac].coherencyTotal++;
+                        if (y <= x) facilityData[fac].coherencyPassed++;
+                    }
+                });
+            });
+            
+            // Count indicator issues by facility
+            Object.values(results.indicators).forEach(function(ind) {
+                if (ind.recs) {
+                    ind.recs.forEach(function(r) {
+                        if (facilityData[r.facility]) {
+                            facilityData[r.facility].indicatorIssues++;
+                        }
+                    });
+                }
+                Object.keys(facilityData).forEach(function(fac) {
+                    facilityData[fac].indicatorTotal += Math.ceil(ind.total / Object.keys(facilityData).length);
+                });
+            });
+            
+            // Count outliers by facility
+            Object.values(results.outliers).forEach(function(o) {
+                o.outliers.forEach(function(out) {
+                    if (facilityData[out.facility]) {
+                        facilityData[out.facility].outlierCount++;
+                    }
+                });
+                Object.keys(facilityData).forEach(function(fac) {
+                    facilityData[fac].outlierTotal += Math.ceil(o.total / Object.keys(facilityData).length);
+                });
+            });
+            
+            // Get reporting rates by facility
+            if (results.reporting && results.reporting.facilityRates) {
+                Object.keys(results.reporting.facilityRates).forEach(function(fac) {
+                    if (facilityData[fac]) {
+                        facilityData[fac].reportingRate = parseFloat(results.reporting.facilityRates[fac].avgRate);
+                    }
+                });
+            }
+            
+            // Calculate scores (each component = 25 points, total = 100)
+            results.rankings = Object.keys(facilityData).map(function(fac) {
+                var d = facilityData[fac];
+                var reportingScore = (d.reportingRate / 100) * 25;
+                var coherencyScore = d.coherencyTotal > 0 ? (d.coherencyPassed / d.coherencyTotal) * 25 : 25;
+                var indicatorScore = d.indicatorTotal > 0 ? Math.max(0, ((d.indicatorTotal - d.indicatorIssues) / d.indicatorTotal) * 25) : 25;
+                var outlierScore = d.outlierTotal > 0 ? Math.max(0, ((d.outlierTotal - d.outlierCount) / d.outlierTotal) * 25) : 25;
+                var totalScore = reportingScore + coherencyScore + indicatorScore + outlierScore;
+                
+                return {
+                    facility: fac,
+                    facilityType: d.facilityType,
+                    reportingScore: reportingScore.toFixed(1),
+                    coherencyScore: coherencyScore.toFixed(1),
+                    indicatorScore: indicatorScore.toFixed(1),
+                    outlierScore: outlierScore.toFixed(1),
+                    totalScore: totalScore.toFixed(1),
+                    coherencyFailed: d.coherencyTotal - d.coherencyPassed,
+                    indicatorIssues: d.indicatorIssues,
+                    outlierCount: d.outlierCount,
+                    reportingRate: d.reportingRate.toFixed(1)
+                };
+            });
+            
+            // Sort from LOWEST to HIGHEST (priority: worst first)
+            results.rankings.sort(function(a, b) { return parseFloat(a.totalScore) - parseFloat(b.totalScore); });
+            results.rankings.forEach(function(r, i) { r.rank = i + 1; });
+        }
+
+        function getPriorityClass(score) {
+            if (score < 50) return 'high';
+            if (score < 75) return 'medium';
+            return 'low';
+        }
+        
+        function getPriorityLabel(score) {
+            if (score < 50) return 'HIGH';
+            if (score < 75) return 'MEDIUM';
+            return 'LOW';
+        }
+
+        function getScoreClass(score) {
+            if (score >= 90) return 'excellent';
+            if (score >= 75) return 'good';
+            if (score >= 50) return 'moderate';
+            return 'poor';
+        }
+
+        function displayResults() {
+            var avgScore = results.rankings.length > 0 
+                ? (results.rankings.reduce(function(s, r) { return s + parseFloat(r.totalScore); }, 0) / results.rankings.length).toFixed(1) 
+                : 0;
+            var highPriority = results.rankings.filter(function(r) { return parseFloat(r.totalScore) < 50; }).length;
+            
+            document.getElementById('overallScore').textContent = avgScore;
+            document.getElementById('totalRecords').textContent = rawData.length.toLocaleString();
+            document.getElementById('totalFacilities').textContent = results.rankings.length;
+            document.getElementById('priorityCount').textContent = highPriority;
+            
+            displayRankingResults();
+            displaySummaryResults();
+            displayCoherencyResults();
+            displayIndicatorResults();
+            displayReportingResults();
+            displayOutlierResults();
+        }
+
+        function displayRankingResults() {
+            var html = '<h4 style="color:#004080;margin-bottom:15px;">🎯 FACILITY PRIORITY VISIT LIST (Ranked by Total Score - Lowest First)</h4>';
+            html += '<p style="font-size:12px;color:#666;margin-bottom:15px;">Facilities with lower scores have more data quality issues and should be prioritized for supportive supervision visits.</p>';
+            
+            html += '<div class="table-container"><table class="data-table"><thead><tr>';
+            html += '<th class="center">Rank</th><th class="center">Priority</th><th>Facility</th><th>Type</th>';
+            html += '<th class="center">Reporting<br>(25)</th><th class="center">Coherency<br>(25)</th><th class="center">Indicator<br>(25)</th><th class="center">Outlier<br>(25)</th>';
+            html += '<th class="center">TOTAL<br>(100)</th><th>Issues Summary</th>';
+            html += '</tr></thead><tbody>';
+            
+            results.rankings.forEach(function(r) {
+                var priorityClass = getPriorityClass(r.totalScore);
+                var priorityLabel = getPriorityLabel(r.totalScore);
+                var scoreClass = getScoreClass(r.totalScore);
+                
+                var issuesSummary = [];
+                if (r.coherencyFailed > 0) issuesSummary.push(r.coherencyFailed + ' coherency');
+                if (r.indicatorIssues > 0) issuesSummary.push(r.indicatorIssues + ' indicator');
+                if (r.outlierCount > 0) issuesSummary.push(r.outlierCount + ' outlier');
+                if (parseFloat(r.reportingRate) < 80) issuesSummary.push('Low reporting');
+                
+                html += '<tr>';
+                html += '<td class="center"><strong>#' + r.rank + '</strong></td>';
+                html += '<td class="center"><span class="priority-badge ' + priorityClass + '">' + priorityLabel + '</span></td>';
+                html += '<td><strong>' + r.facility + '</strong></td>';
+                html += '<td>' + (r.facilityType || '-') + '</td>';
+                html += '<td class="center">' + r.reportingScore + '</td>';
+                html += '<td class="center">' + r.coherencyScore + '</td>';
+                html += '<td class="center">' + r.indicatorScore + '</td>';
+                html += '<td class="center">' + r.outlierScore + '</td>';
+                html += '<td class="center"><span class="score-badge ' + scoreClass + '">' + r.totalScore + '</span></td>';
+                html += '<td style="font-size:11px;">' + (issuesSummary.length > 0 ? issuesSummary.join(', ') : 'None') + '</td>';
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table></div>';
+            document.getElementById('rankingResults').innerHTML = html;
+        }
+
+        function displaySummaryResults() {
+            var html = '<div class="stats-grid">';
+            
+            var cohChecks = Object.values(results.coherency);
+            if (cohChecks.length > 0) {
+                var avgCoh = (cohChecks.reduce(function(s, c) { return s + parseFloat(c.passRate); }, 0) / cohChecks.length).toFixed(1);
+                html += '<div class="stats-card ' + (avgCoh >= 80 ? 'success' : 'danger') + '"><div class="metric-value">' + avgCoh + '%</div><p>Coherency Pass Rate</p></div>';
+            }
+            
+            if (results.reporting) {
+                html += '<div class="stats-card ' + (results.reporting.avgRate >= 80 ? 'success' : 'danger') + '"><div class="metric-value">' + results.reporting.avgRate + '%</div><p>Avg Reporting Rate</p></div>';
+            }
+            
+            var totalIndIssues = Object.values(results.indicators).reduce(function(s, i) { return s + i.issues; }, 0);
+            html += '<div class="stats-card danger"><div class="metric-value">' + totalIndIssues + '</div><p>Indicator Issues</p></div>';
+            
+            var totalOutliers = Object.values(results.outliers).reduce(function(s, o) { return s + o.count; }, 0);
+            html += '<div class="stats-card warning"><div class="metric-value">' + totalOutliers + '</div><p>Outliers Found</p></div>';
+            
+            html += '</div>';
+            document.getElementById('categoryScoresContainer').innerHTML = html;
+            
+            createSummaryPlot();
+        }
+
+        function createSummaryPlot() {
+            var cats = [], scores = [];
+            Object.values(results.coherency).forEach(function(c) { cats.push(c.name); scores.push(parseFloat(c.passRate)); });
+            if (results.reporting) { cats.push('Reporting'); scores.push(parseFloat(results.reporting.avgRate)); }
+            Object.values(results.indicators).forEach(function(i) { cats.push(i.name.split('(')[0].trim().substring(0,15)); scores.push(100 - parseFloat(i.rate)); });
+            
+            if (cats.length === 0) return;
+            
+            Plotly.newPlot('summaryPlot', [{
+                type: 'scatterpolar', r: scores.concat([scores[0]]), theta: cats.concat([cats[0]]),
+                fill: 'toself', fillcolor: 'rgba(0,64,128,0.3)', line: { color: '#004080', width: 2 }, marker: { size: 8, color: '#ffc107' }
+            }], {
+                polar: { radialaxis: { visible: true, range: [0, 100] } },
+                font: { family: 'Oswald' }, showlegend: false, margin: { t: 50, b: 50 },
+                title: { text: '<b>DQA Score Overview</b>', font: { size: 16, color: '#004080' } }
+            }, { responsive: true });
+        }
+
+        function displayCoherencyResults() {
+            var checks = Object.values(results.coherency);
+            if (checks.length === 0) {
+                document.getElementById('coherencyResults').innerHTML = '<p style="color:#666;font-style:italic;">No coherency checks configured</p>';
+                return;
+            }
+            
+            var html = '<div class="table-container"><table class="data-table"><thead><tr><th>Check</th><th>X Variable</th><th>Y Variable</th><th class="center">Total</th><th class="center">Passed</th><th class="center">Failed</th><th class="center">Pass Rate</th></tr></thead><tbody>';
+            checks.forEach(function(c) {
+                html += '<tr><td><b>'+c.name+'</b></td><td>'+c.xVar+'</td><td>'+c.yVar+'</td><td class="center">'+c.total.toLocaleString()+'</td><td class="center passed">'+c.passed.toLocaleString()+'</td><td class="center failed">'+c.failed.toLocaleString()+'</td><td class="center"><span class="score-badge '+getScoreClass(c.passRate)+'">'+c.passRate+'%</span></td></tr>';
+            });
+            html += '</tbody></table></div>';
+            
+            checks.forEach(function(c) {
+                if (c.failedRecs.length > 0) {
+                    html += '<details style="margin-top:15px;"><summary style="cursor:pointer;color:#004080;font-weight:600;">' + c.name + ' - Failed Records (' + c.failedRecs.length + ')</summary>';
+                    html += '<div class="table-container" style="margin-top:10px;"><table class="data-table"><thead><tr><th>Facility</th><th>Type</th><th>Year</th><th class="center">' + c.xVar + ' (X)</th><th class="center">' + c.yVar + ' (Y)</th><th class="center">Diff</th></tr></thead><tbody>';
+                    c.failedRecs.slice(0, 50).forEach(function(r) {
+                        html += '<tr><td>' + r.facility + '</td><td>' + r.facilityType + '</td><td>' + r.year + '</td><td class="center">' + r.x + '</td><td class="center failed">' + r.y + '</td><td class="center failed">+' + r.diff + '</td></tr>';
+                    });
+                    html += '</tbody></table></div></details>';
+                }
+            });
+            
+            document.getElementById('coherencyResults').innerHTML = html;
+            
+            var traces = [];
+            checks.forEach(function(c, i) {
+                traces.push({ x: [c.name], y: [c.passed], name: 'Passed', type: 'bar', marker: { color: '#28a745' }, showlegend: i === 0 });
+                traces.push({ x: [c.name], y: [c.failed], name: 'Failed', type: 'bar', marker: { color: '#dc3545' }, showlegend: i === 0 });
+            });
+            Plotly.newPlot('coherencyPlot', traces, { barmode: 'group', font: { family: 'Oswald' }, title: { text: '<b>Coherency Results</b>', font: { size: 16, color: '#004080' } }, legend: { orientation: 'h', y: -0.2 } }, { responsive: true });
+        }
+
+        function displayIndicatorResults() {
+            var inds = Object.values(results.indicators);
+            if (inds.length === 0) {
+                document.getElementById('indicatorResults').innerHTML = '<p style="color:#666;font-style:italic;">No indicator checks configured</p>';
+                return;
+            }
+            
+            var html = '';
+            inds.forEach(function(ind) {
+                var borderColor = parseFloat(ind.rate) > 10 ? '#dc3545' : '#28a745';
+                html += '<div class="config-card" style="border-left:5px solid '+borderColor+';margin-bottom:15px;">';
+                html += '<h4 style="color:#004080;">'+ind.name+'</h4>';
+                if (ind.desc) html += '<p style="font-size:12px;color:#666;margin-bottom:10px;">'+ind.desc+'</p>';
+                html += '<div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">';
+                html += '<div class="stats-card"><div class="metric-value" style="font-size:1.5rem;">'+ind.total.toLocaleString()+'</div><p>Total</p></div>';
+                html += '<div class="stats-card danger"><div class="metric-value" style="font-size:1.5rem;">'+ind.issues.toLocaleString()+'</div><p>Issues</p></div>';
+                html += '<div class="stats-card"><div class="metric-value" style="font-size:1.5rem;">'+ind.rate+'%</div><p>Issue Rate</p></div>';
+                html += '</div>';
+                if (ind.recs && ind.recs.length > 0) {
+                    html += '<details style="margin-top:12px;"><summary style="cursor:pointer;color:#004080;font-weight:600;">View Details ('+Math.min(ind.recs.length,30)+' shown)</summary>';
+                    html += '<div class="table-container" style="margin-top:10px;"><table class="data-table"><thead><tr><th>Facility</th><th>Type</th><th>Year</th><th>Details</th></tr></thead><tbody>';
+                    ind.recs.slice(0, 30).forEach(function(r) {
+                        var details = Object.keys(r).filter(function(k) { return ['facility', 'facilityType', 'year'].indexOf(k) < 0; }).map(function(k) { return k + ': ' + r[k]; }).join(', ');
+                        html += '<tr><td>' + r.facility + '</td><td>' + (r.facilityType || '-') + '</td><td>' + (r.year || '-') + '</td><td style="font-size:11px;">' + details + '</td></tr>';
+                    });
+                    html += '</tbody></table></div></details>';
+                }
+                html += '</div>';
+            });
+            document.getElementById('indicatorResults').innerHTML = html;
+        }
+
+        function displayReportingResults() {
+            if (!results.reporting) {
+                document.getElementById('reportingResults').innerHTML = '<p style="color:#666;font-style:italic;">No reporting analysis configured</p>';
+                return;
+            }
+            
+            var rep = results.reporting;
+            var html = '<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">';
+            html += '<div class="stats-card"><div class="metric-value">' + rep.totalFacilityYears + '</div><p>Facility-Year Combinations</p></div>';
+            html += '<div class="stats-card ' + (parseFloat(rep.avgRate) >= 80 ? 'success' : 'danger') + '"><div class="metric-value">' + rep.avgRate + '%</div><p>Avg Reporting Rate</p></div>';
+            html += '<div class="stats-card danger"><div class="metric-value">' + rep.detailedRates.filter(function(r) { return parseFloat(r.rate) < 80; }).length + '</div><p>Below 80% Threshold</p></div>';
+            html += '</div>';
+            
+            var lowRep = rep.detailedRates.filter(function(r) { return parseFloat(r.rate) < 80; }).slice(0, 30);
+            if (lowRep.length > 0) {
+                html += '<h4 style="color:#004080;margin:20px 0 10px;">Low Reporting Facility-Years (&lt; 80%)</h4>';
+                html += '<div class="table-container"><table class="data-table"><thead><tr><th>Facility</th><th>Type</th><th>Year</th><th class="center">Reported</th><th class="center">Expected</th><th class="center">Rate</th></tr></thead><tbody>';
+                lowRep.forEach(function(r) {
+                    html += '<tr><td>' + r.facility + '</td><td>' + (r.facilityType || '-') + '</td><td>' + r.year + '</td><td class="center">' + r.reported + '</td><td class="center">' + r.expected + '</td><td class="center failed">' + r.rate + '%</td></tr>';
+                });
+                html += '</tbody></table></div>';
+            }
+            document.getElementById('reportingResults').innerHTML = html;
+            
+            var rates = rep.detailedRates.map(function(r) { return parseFloat(r.rate); });
+            Plotly.newPlot('reportingPlot', [{ x: rates, type: 'histogram', marker: { color: '#004080' }, nbinsx: 20 }], {
+                title: { text: '<b>Reporting Rate Distribution</b>', font: { size: 16, color: '#004080' } },
+                xaxis: { title: 'Reporting Rate (%)' }, yaxis: { title: 'Facility-Years' }, font: { family: 'Oswald' },
+                shapes: [{ type: 'line', x0: 80, x1: 80, y0: 0, y1: 1, yref: 'paper', line: { color: '#dc3545', width: 2, dash: 'dash' } }]
+            }, { responsive: true });
+        }
+
+        function displayOutlierResults() {
+            var outs = Object.values(results.outliers);
+            if (outs.length === 0) {
+                document.getElementById('outlierResults').innerHTML = '<p style="color:#666;font-style:italic;">No outlier detection configured. Select variables using the checkboxes above.</p>';
+                return;
+            }
+            
+            var html = '<h4 style="color:#004080;margin-bottom:15px;">Outlier Detection using IQR Method by Year</h4>';
+            html += '<p style="font-size:12px;color:#666;margin-bottom:15px;">Values below <b>Lower Bound (Q1 - 1.5×IQR)</b> or above <b>Upper Bound (Q3 + 1.5×IQR)</b> are flagged as outliers.</p>';
+            
+            outs.forEach(function(o) {
+                html += '<div class="config-card" style="border:3px solid #004080;margin-bottom:20px;">';
+                html += '<h4 style="color:#004080;margin-bottom:15px;">📊 ' + o.variable + '</h4>';
+                html += '<div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">';
+                html += '<div class="stats-card"><div class="metric-value" style="font-size:1.5rem;">' + o.total.toLocaleString() + '</div><p>Total Values</p></div>';
+                html += '<div class="stats-card danger"><div class="metric-value" style="font-size:1.5rem;">' + o.count + '</div><p>Outliers</p></div>';
+                html += '<div class="stats-card ' + (parseFloat(o.rate) < 5 ? 'success' : 'warning') + '"><div class="metric-value" style="font-size:1.5rem;">' + o.rate + '%</div><p>Outlier Rate</p></div>';
+                html += '</div>';
+                
+                html += '<h5 style="color:#004080;margin:15px 0 10px;">IQR Bounds by Year</h5>';
+                html += '<div class="table-container"><table class="data-table"><thead><tr><th>Year</th><th class="center">Q1 (25%)</th><th class="center">Q3 (75%)</th><th class="center">IQR</th><th class="center">Lower Bound</th><th class="center">Upper Bound</th><th class="center">N</th></tr></thead><tbody>';
+                Object.keys(o.yearStats).sort().forEach(function(year) {
+                    var ys = o.yearStats[year];
+                    html += '<tr><td><b>' + year + '</b></td><td class="center">' + ys.q1.toFixed(1) + '</td><td class="center">' + ys.q3.toFixed(1) + '</td><td class="center">' + ys.iqr.toFixed(1) + '</td><td class="center" style="color:#17a2b8;">' + ys.lower.toFixed(1) + '</td><td class="center" style="color:#dc3545;">' + ys.upper.toFixed(1) + '</td><td class="center">' + ys.total + '</td></tr>';
+                });
+                html += '</tbody></table></div>';
+                
+                if (o.outliers.length > 0) {
+                    html += '<details style="margin-top:15px;"><summary style="cursor:pointer;color:#004080;font-weight:600;">View Outlier Details (' + o.outliers.length + ' found)</summary>';
+                    html += '<div class="table-container" style="margin-top:10px;"><table class="data-table"><thead><tr><th>Facility</th><th>Type</th><th>Year</th><th>Period</th><th class="center">Value</th><th>Issue</th><th class="center">Bound</th></tr></thead><tbody>';
+                    o.outliers.slice(0, 50).forEach(function(out) {
+                        var issueColor = out.type === 'Below Lower Bound' ? '#17a2b8' : '#dc3545';
+                        html += '<tr><td>' + out.facility + '</td><td>' + (out.facilityType || '-') + '</td><td>' + out.year + '</td><td>' + out.period + '</td><td class="center"><b>' + out.value + '</b></td><td style="color:' + issueColor + ';">' + out.type + '</td><td class="center">' + out.bound + '</td></tr>';
+                    });
+                    html += '</tbody></table></div></details>';
+                }
+                html += '</div>';
+            });
+            
+            document.getElementById('outlierResults').innerHTML = html;
+            
+            var traces = outs.map(function(o) {
+                var vals = rawData.map(function(r) { return parseFloat(r[o.variable]); }).filter(function(v) { return !isNaN(v); });
+                return { y: vals, type: 'box', name: o.variable, boxpoints: 'outliers', marker: { color: '#004080' } };
+            });
+            Plotly.newPlot('outlierPlot', traces, { title: { text: '<b>Value Distribution with Outliers</b>', font: { size: 16, color: '#004080' } }, font: { family: 'Oswald' }, showlegend: false }, { responsive: true });
+        }
+
+        function switchTab(name) {
+            document.querySelectorAll('.tab-btn').forEach(function(t) { t.classList.remove('active'); });
+            document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+            event.target.classList.add('active');
+            document.getElementById('tab-' + name).classList.add('active');
+            setTimeout(function() { window.dispatchEvent(new Event('resize')); }, 100);
+        }
+
+        function exportFullReport() {
+            updateRoadmap(5);
+            var csv = 'DQA Full Report\nGenerated: ' + new Date().toLocaleString() + '\n\n';
+            
+            csv += 'FACILITY PRIORITY RANKING (Lowest Score = Highest Priority)\n';
+            csv += 'Rank,Priority,Facility,Facility Type,Reporting Score (25),Coherency Score (25),Indicator Score (25),Outlier Score (25),Total Score (100),Coherency Failed,Indicator Issues,Outliers,Reporting Rate\n';
+            results.rankings.forEach(function(r) {
+                csv += r.rank + ',' + getPriorityLabel(r.totalScore) + ',"' + r.facility + '","' + (r.facilityType || '') + '",' + r.reportingScore + ',' + r.coherencyScore + ',' + r.indicatorScore + ',' + r.outlierScore + ',' + r.totalScore + ',' + r.coherencyFailed + ',' + r.indicatorIssues + ',' + r.outlierCount + ',' + r.reportingRate + '%\n';
+            });
+            
+            csv += '\nCOHERENCY CHECK RESULTS\n';
+            csv += 'Check,X Variable,Y Variable,Total,Passed,Failed,Pass Rate\n';
+            Object.values(results.coherency).forEach(function(c) {
+                csv += '"' + c.name + '","' + c.xVar + '","' + c.yVar + '",' + c.total + ',' + c.passed + ',' + c.failed + ',' + c.passRate + '%\n';
+            });
+            
+            csv += '\nINDICATOR RESULTS\n';
+            csv += 'Indicator,Total,Issues,Rate\n';
+            Object.values(results.indicators).forEach(function(i) {
+                csv += '"' + i.name + '",' + i.total + ',' + i.issues + ',' + i.rate + '%\n';
+            });
+            
+            downloadCSV(csv, 'dqa_full_report.csv');
+        }
+
+        function exportPriorityList() {
+            updateRoadmap(5);
+            var csv = 'Priority Visit List - ' + new Date().toLocaleDateString() + '\n\n';
+            csv += 'Rank,Priority,Facility,Facility Type,Total Score,Reporting Score,Coherency Score,Indicator Score,Outlier Score,Key Issues\n';
+            
+            results.rankings.forEach(function(r) {
+                var issues = [];
+                if (r.coherencyFailed > 0) issues.push(r.coherencyFailed + ' coherency');
+                if (r.indicatorIssues > 0) issues.push(r.indicatorIssues + ' indicator');
+                if (r.outlierCount > 0) issues.push(r.outlierCount + ' outlier');
+                if (parseFloat(r.reportingRate) < 80) issues.push('Low reporting (' + r.reportingRate + '%)');
+                
+                csv += r.rank + ',' + getPriorityLabel(r.totalScore) + ',"' + r.facility + '","' + (r.facilityType || '') + '",' + r.totalScore + ',' + r.reportingScore + ',' + r.coherencyScore + ',' + r.indicatorScore + ',' + r.outlierScore + ',"' + issues.join('; ') + '"\n';
+            });
+            
+            downloadCSV(csv, 'priority_visit_list.csv');
+        }
+
+        function exportOutlierDetails() {
+            var csv = 'Outlier Details Report - ' + new Date().toLocaleDateString() + '\n\n';
+            
+            Object.values(results.outliers).forEach(function(o) {
+                csv += 'VARIABLE: ' + o.variable + '\n';
+                csv += 'Total Values,' + o.total + '\n';
+                csv += 'Outliers Found,' + o.count + '\n';
+                csv += 'Outlier Rate,' + o.rate + '%\n\n';
+                
+                csv += 'IQR Bounds by Year\n';
+                csv += 'Year,Q1,Q3,IQR,Lower Bound,Upper Bound,N\n';
+                Object.keys(o.yearStats).sort().forEach(function(year) {
+                    var ys = o.yearStats[year];
+                    csv += year + ',' + ys.q1.toFixed(1) + ',' + ys.q3.toFixed(1) + ',' + ys.iqr.toFixed(1) + ',' + ys.lower.toFixed(1) + ',' + ys.upper.toFixed(1) + ',' + ys.total + '\n';
+                });
+                
+                csv += '\nOutlier Records\n';
+                csv += 'Facility,Facility Type,Year,Period,Value,Issue Type,Bound\n';
+                o.outliers.forEach(function(out) {
+                    csv += '"' + out.facility + '","' + (out.facilityType || '') + '",' + out.year + ',' + out.period + ',' + out.value + ',"' + out.type + '",' + out.bound + '\n';
+                });
+                csv += '\n\n';
+            });
+            
+            downloadCSV(csv, 'outlier_details.csv');
+        }
+
+        function downloadCSV(content, filename) {
+            var blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+            var a = document.createElement('a'); 
+            a.href = URL.createObjectURL(blob); 
+            a.download = filename; 
+            a.click();
+        }
+    </script>
+</body>
+</html>
